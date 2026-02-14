@@ -33,6 +33,7 @@ function LockOpenIcon({ size = 14, color = "currentColor" }: { size?: number; co
 function MatchProfileDetail({ match, onPlanDate, onBack }: { match: MatchProfile; onPlanDate: () => void; onBack: () => void }) {
   const pub = match.publicProfile;
   const priv = match.privateProfile;
+  const xref = match.crossref;
 
   const sectionLabel = (text: string, icon?: React.ReactNode) => (
     <div style={{
@@ -80,7 +81,6 @@ function MatchProfileDetail({ match, onPlanDate, onBack }: { match: MatchProfile
         <img src={match.photo} alt={match.name} style={{ width: 64, height: 64, borderRadius: 32, objectFit: "cover" }} />
         <div>
           <div style={{ fontSize: 24, fontWeight: 800, color: SURFACE.textPrimary }}>{match.name}, {match.age}</div>
-          <div style={{ fontSize: 12, fontFamily: FONT_MONO, color: COLORS.limeCreem }}>{match.compatibility} match</div>
         </div>
       </div>
 
@@ -157,6 +157,69 @@ function MatchProfileDetail({ match, onPlanDate, onBack }: { match: MatchProfile
             </span>
           ))}
         </div>
+      </div>
+
+      {sectionLabel("Shared")}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {xref.shared.map((item) => (
+          <div key={item.title} style={{
+            background: `${COLORS.limeCreem}0D`,
+            border: `1px solid ${COLORS.limeCreem}20`,
+            borderRadius: 16,
+            padding: "14px 16px",
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.limeCreem, marginBottom: 4 }}>{item.title}</div>
+            <div style={{ fontSize: 13, color: SURFACE.textSecondary, lineHeight: 1.5 }}>{item.description}</div>
+          </div>
+        ))}
+      </div>
+
+      {sectionLabel("Complementary")}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {xref.complementary.map((item) => (
+          <div key={item.title} style={{
+            background: `${COLORS.brightAmber}0D`,
+            border: `1px solid ${COLORS.brightAmber}20`,
+            borderRadius: 16,
+            padding: "14px 16px",
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.brightAmber, marginBottom: 4 }}>{item.title}</div>
+            <div style={{ fontSize: 13, color: SURFACE.textSecondary, lineHeight: 1.5 }}>{item.description}</div>
+          </div>
+        ))}
+      </div>
+
+      {sectionLabel("Tension Points")}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {xref.tensionPoints.map((item) => (
+          <div key={item.title} style={{
+            background: `${COLORS.hotFuchsia}0D`,
+            border: `1px solid ${COLORS.hotFuchsia}20`,
+            borderRadius: 16,
+            padding: "14px 16px",
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.hotFuchsia, marginBottom: 4 }}>{item.title}</div>
+            <div style={{ fontSize: 13, color: SURFACE.textSecondary, lineHeight: 1.5 }}>{item.description}</div>
+          </div>
+        ))}
+      </div>
+
+      {sectionLabel("Citations")}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {xref.citations.map((cite) => (
+          <div key={cite} style={{
+            fontSize: 12,
+            fontFamily: FONT_MONO,
+            color: SURFACE.textTertiary,
+            background: `${COLORS.softPeriwinkle}0D`,
+            padding: "10px 14px",
+            borderRadius: 12,
+            borderLeft: `3px solid ${COLORS.softPeriwinkle}40`,
+            lineHeight: 1.4,
+          }}>
+            {cite}
+          </div>
+        ))}
       </div>
 
       <button
@@ -349,6 +412,12 @@ interface MatchProfile {
     deepCuts: string[];
     dataSources: string[];
   };
+  crossref: {
+    shared: { title: string; description: string }[];
+    complementary: { title: string; description: string }[];
+    tensionPoints: { title: string; description: string }[];
+    citations: string[];
+  };
 }
 
 const MATCHES: MatchProfile[] = [
@@ -358,6 +427,26 @@ const MATCHES: MatchProfile[] = [
     suggestion: { place: "Blue Note Jazz Club", address: "131 W 3rd St, Greenwich Village", date: "Fri, Feb 20 · 8:00 PM", reason: "You both love jazz and live music — Blue Note is a perfect first vibe check." },
     publicProfile: { vibe: "A nocturnal creative who lives for jazz and quiet observation.", tags: ["jazz", "photography", "mezcal", "film noir", "vinyl", "subway portraits"], schedule: "night owl" },
     privateProfile: { summary: "A photographer with a deep love for jazz and analog culture. Her Letterboxd is full of moody European films and she gravitates toward artists who blend genres.", traits: ["visual storyteller", "analog purist", "jazz devotee", "night owl", "contemplative"], interests: ["Miles Davis", "Chet Baker", "Wong Kar-wai", "In the Mood for Love", "Stalker", "Paris Texas", "Kodak Portra", "Mezcal"], deepCuts: ["Photographs strangers on the L train", "Rated 'In the Mood for Love' 5 stars three times", "Has a vinyl-only listening rule on Sundays"], dataSources: ["spotify", "letterboxd", "instagram"] },
+    crossref: {
+      shared: [
+        { title: "Film Appreciation", description: "Both have a deep love for auteur cinema and rate films obsessively on Letterboxd." },
+        { title: "Vinyl Culture", description: "Both collect vinyl records and prefer analog listening experiences." },
+        { title: "Night Owl Schedule", description: "Both are most active and creative during late-night hours." },
+      ],
+      complementary: [
+        { title: "Visual vs. Musical", description: "Luna expresses herself through photography while you lean toward music — a natural creative pairing." },
+        { title: "Mezcal Meets Coffee", description: "Her mezcal expertise complements your coffee obsession for interesting drink conversations." },
+      ],
+      tensionPoints: [
+        { title: "Social Energy", description: "Luna prefers quiet observation while you tend toward more social settings." },
+        { title: "Analog Purism", description: "Her strict vinyl-only rules may clash with your digital-first approach to music." },
+      ],
+      citations: [
+        "Luna: 'vinyl-only listening rule on Sundays'",
+        "Luna: Rated 'In the Mood for Love' 5 stars three times on Letterboxd",
+        "Both users have 'night_owl' schedule pattern",
+      ],
+    },
   },
   {
     name: "Priya", age: 28, photo: "/profile_photos/4.png", compatibility: "89%",
@@ -365,6 +454,31 @@ const MATCHES: MatchProfile[] = [
     suggestion: { place: "MoMA", address: "11 W 53rd St, Midtown", date: "Sat, Feb 21 · 2:00 PM", reason: "She's into design, you're into art — MoMA on a Saturday afternoon is a no-brainer." },
     publicProfile: { vibe: "A modern soul with a passion for building and a taste for the finer things.", tags: ["web dev", "hip hop", "film enthusiast", "coding interviews", "music lover", "fitness", "machine learning"], schedule: "mixed" },
     privateProfile: { summary: "This person is a developer with a strong interest in web technologies and machine learning. They enjoy critically acclaimed films and have a penchant for modern hip hop and R&B. They seem driven and ambitious, possibly preparing for job interviews in the tech industry.", traits: ["aspiring developer", "modern music aficionado", "film critic", "interview prep", "fitness enthusiast"], interests: ["HTML", "PHP", "JavaScript", "CSS", "Drake", "The Weeknd", "Travis Scott", "Kendrick Lamar", "Frank Ocean", "Interstellar", "The Social Network", "Oppenheimer", "Whiplash", "Parasite"], deepCuts: ["Starred repositories related to interview preparation", "Experimenting with SkinCancerCNN", "Listens to Frank Ocean", "Rated 'Interstellar' and 'Whiplash' a perfect 5 stars"], dataSources: ["github", "spotify", "letterboxd"] },
+    crossref: {
+      shared: [
+        { title: "Machine Learning Interest", description: "Both individuals have a documented interest in machine learning, suggesting a potential area for collaboration or discussion." },
+        { title: "Web Development Focus", description: "Both individuals are involved in web development, indicating a shared understanding of web technologies and practices." },
+        { title: "Github Activity", description: "Both individuals have Github accounts, implying a shared interest in open-source development and version control." },
+        { title: "Python Proficiency", description: "Both individuals list Python among their preferred languages." },
+      ],
+      complementary: [
+        { title: "Front-end vs. Full-stack", description: "Person A leans towards front-end design, while Person B is a full-stack developer. This provides a good balance of skills for project collaboration." },
+        { title: "Security Focus", description: "Person A has a strong interest in cybersecurity, which could complement Person B's broader development skills by adding a security-conscious perspective." },
+        { title: "Film Connoisseur", description: "Person B is a film enthusiast, possibly introducing a new interest or perspective to Person A." },
+        { title: "Tech-for-Good Advocate", description: "Person B is focused on applying tech to solve real-world problems. This aligns with Person A's interest in fitness applications and could be a point of collaboration." },
+      ],
+      tensionPoints: [
+        { title: "Schedule Differences", description: "Person A is a self-described 'night owl,' while Person B has a 'mixed' schedule." },
+        { title: "Technology Stack Preferences", description: "Person A favors PHP and Javascript, while Person B prefers TypeScript, Rust, and Next.js." },
+        { title: "Project Scope", description: "Person A appears to focus on individual projects and job seeking, while Person B is involved in broader, community-focused projects." },
+      ],
+      citations: [
+        "Person A: 'front-end enthusiast', Person B: 'full-stack enthusiast'",
+        "Person A: schedule_pattern: 'night_owl', Person B: schedule_pattern: 'mixed'",
+        "Person A's interests include 'SkinCancerCNN', Person B's interests include 'Machine Learning'",
+        "Person B: 'Built a Valentine's Day themed project at a hackathon.'",
+      ],
+    },
   },
   {
     name: "Chloe", age: 26, photo: "/profile_photos/6.png", compatibility: "87%",
@@ -372,6 +486,26 @@ const MATCHES: MatchProfile[] = [
     suggestion: { place: "Comedy Cellar", address: "117 MacDougal St, West Village", date: "Tue, Feb 25 · 9:30 PM", reason: "You both appreciate comedy — catch a show and see who laughs harder." },
     publicProfile: { vibe: "Sharp-tongued writer who finds humor in everything.", tags: ["comedy", "writing", "theater", "karaoke", "stand-up", "improv"], schedule: "night owl" },
     privateProfile: { summary: "A writer and comedian who spends most nights at open mics. Her taste in film leans toward dark comedies and she has a surprisingly deep Spotify history of 90s alt-rock.", traits: ["quick wit", "performer", "night owl", "empathetic writer", "karaoke queen"], interests: ["Fleabag", "Atlanta", "Bo Burnham", "Nora Ephron", "Radiohead", "Fiona Apple", "The Lobster", "Sorry to Bother You"], deepCuts: ["Has a draft folder with 47 unfinished essays", "Performs stand-up every Tuesday at Comedy Cellar", "Rated 'Fleabag' episodes individually on Letterboxd"], dataSources: ["spotify", "letterboxd", "instagram"] },
+    crossref: {
+      shared: [
+        { title: "Dark Comedy Fans", description: "Both gravitate toward absurdist and dark humor in film and TV." },
+        { title: "Live Performance Love", description: "Both enjoy live shows — comedy for Chloe, music for you." },
+        { title: "Karaoke Enthusiasts", description: "Both have karaoke listed as a go-to social activity." },
+      ],
+      complementary: [
+        { title: "Writer Meets Reader", description: "Chloe writes essays and comedy bits; you're a voracious reader — natural audience for each other." },
+        { title: "Alt-Rock Discovery", description: "Her deep 90s alt-rock Spotify history could introduce you to new music." },
+      ],
+      tensionPoints: [
+        { title: "Roasting Tolerance", description: "Chloe will roast you on the first date — not everyone's love language." },
+        { title: "Night Owl Extremes", description: "Her open-mic schedule means very late nights, even by night owl standards." },
+      ],
+      citations: [
+        "Chloe: 'I will absolutely roast you on the first date'",
+        "Chloe: Performs stand-up every Tuesday at Comedy Cellar",
+        "Both users list 'karaoke' as a social activity",
+      ],
+    },
   },
   {
     name: "Iris", age: 26, photo: "/profile_photos/10.png", compatibility: "82%",
@@ -379,6 +513,26 @@ const MATCHES: MatchProfile[] = [
     suggestion: { place: "Metrograph Cinema", address: "7 Ludlow St, Lower East Side", date: "Sun, Mar 1 · 4:00 PM", reason: "Film buffs unite — Metrograph always has something interesting playing." },
     publicProfile: { vibe: "Ink-stained museum wanderer with impeccable playlists.", tags: ["tattoos", "museums", "poetry", "music curation", "zines", "film"], schedule: "flexible" },
     privateProfile: { summary: "A creative who splits time between gallery visits and curating playlists. She reads poetry collections and makes zines about her neighborhood. Deeply into ambient and experimental music.", traits: ["curator", "poet", "visual thinker", "tattoo collector", "community builder"], interests: ["Björk", "FKA Twigs", "Aphex Twin", "Rothko", "Ocean Vuong", "Moonlight", "Portrait of a Lady on Fire", "Zine culture"], deepCuts: ["Made a 200-track playlist called 'for walking home alone'", "Has a tattoo of a Rothko painting", "Rated 'Moonlight' 5 stars twice"], dataSources: ["spotify", "letterboxd", "instagram"] },
+    crossref: {
+      shared: [
+        { title: "Museum Culture", description: "Both spend weekends at galleries and museums as a default activity." },
+        { title: "Music Curation", description: "Both invest serious time building playlists and discovering new artists." },
+        { title: "Poetry Appreciation", description: "Both engage with poetry — Iris through zines, you through reading." },
+      ],
+      complementary: [
+        { title: "Visual Art Depth", description: "Iris has tattoos of Rothko paintings — her visual art knowledge runs deeper and could broaden your perspective." },
+        { title: "Ambient Explorer", description: "Her experimental music taste (Björk, Aphex Twin) could expand your listening horizons." },
+      ],
+      tensionPoints: [
+        { title: "Introvert Energy", description: "Iris's solitary creative pursuits (zine-making, solo gallery visits) may clash with more social preferences." },
+        { title: "Niche Taste Gap", description: "Her deeply experimental taste may feel inaccessible at times." },
+      ],
+      citations: [
+        "Iris: Made a 200-track playlist called 'for walking home alone'",
+        "Iris: Has a tattoo of a Rothko painting",
+        "Both users frequent museum and gallery spaces regularly",
+      ],
+    },
   },
   {
     name: "Ella", age: 28, photo: "/profile_photos/9.png", compatibility: "78%",
@@ -386,6 +540,26 @@ const MATCHES: MatchProfile[] = [
     suggestion: { place: "Brooklyn Botanic Garden", address: "990 Washington Ave, Brooklyn", date: "Sat, Mar 8 · 11:00 AM", reason: "You both love nature and calm vibes — a garden stroll is the perfect low-key first date." },
     publicProfile: { vibe: "Gentle soul who finds joy in slow mornings and growing things.", tags: ["ceramics", "baking", "gardening", "indie music", "farmers market", "sourdough"], schedule: "early bird" },
     privateProfile: { summary: "A homebody creative who bakes sourdough, tends a rooftop garden, and listens to indie folk while doing ceramics. Her film taste is warm and nostalgic — lots of Ghibli and coming-of-age stories.", traits: ["nurturing", "patient creator", "nature lover", "morning person", "cozy minimalist"], interests: ["Bon Iver", "Phoebe Bridgers", "Big Thief", "Studio Ghibli", "Lady Bird", "Aftersun", "Ceramics", "Sourdough"], deepCuts: ["Named her sourdough starter 'Leonard'", "Has a rooftop garden with 14 plant species", "Cried at 'Aftersun' three separate times"], dataSources: ["spotify", "letterboxd"] },
+    crossref: {
+      shared: [
+        { title: "Indie Music Taste", description: "Both listen to Bon Iver, Phoebe Bridgers, and adjacent indie folk artists." },
+        { title: "Baking Interest", description: "Both enjoy baking as a creative and relaxing activity." },
+        { title: "Nature Connection", description: "Both value time outdoors and in green spaces." },
+      ],
+      complementary: [
+        { title: "Morning vs. Night", description: "Ella is an early bird who could balance out your night owl tendencies with morning energy." },
+        { title: "Tactile Creativity", description: "Her ceramics and gardening hobbies add a hands-on creative dimension you might enjoy exploring." },
+      ],
+      tensionPoints: [
+        { title: "Schedule Mismatch", description: "Ella is a morning person while you lean toward late nights — coordinating time together may require compromise." },
+        { title: "Homebody vs. Explorer", description: "Ella prefers staying in while you may want to go out more often." },
+      ],
+      citations: [
+        "Ella: Named her sourdough starter 'Leonard'",
+        "Ella: schedule_pattern: 'early_bird'",
+        "Both users listen to Bon Iver and Phoebe Bridgers on Spotify",
+      ],
+    },
   },
 ];
 
@@ -458,9 +632,6 @@ function MatchesView({ initialPlanIdx, onClearInitial }: { initialPlanIdx?: numb
         <div style={{ fontSize: 22, fontWeight: 800, color: SURFACE.textPrimary, marginBottom: 6 }}>
           {selected.name}, {selected.age}
         </div>
-        <div style={{ fontSize: 12, fontFamily: FONT_MONO, color: COLORS.limeCreem, marginBottom: 24 }}>
-          {selected.compatibility} match
-        </div>
         <div style={{ fontSize: 16, color: SURFACE.textSecondary, marginBottom: 28, textAlign: "center" }}>
           Plan a date with {selected.name}?
         </div>
@@ -525,14 +696,13 @@ function MatchesView({ initialPlanIdx, onClearInitial }: { initialPlanIdx?: numb
           justifyContent: "center",
           margin: "20px auto",
         }}>
-          <div style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            border: `3px solid ${COLORS.softPeriwinkle}`,
-            borderTopColor: "transparent",
-            animation: "spin 0.8s linear infinite",
-          }} />
+          {[
+            <svg key="music" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+            <svg key="film" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>,
+            <svg key="map" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+            <svg key="wine" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M8 2h8l-1 9a5 5 0 0 1-10 0L8 2z"/><path d="M12 15v7"/><path d="M8 22h8"/></svg>,
+            <StarIcon size={28} color={COLORS.softPeriwinkle} />,
+          ][analysisStep % 5]}
         </div>
         <div style={{ fontSize: 14, fontWeight: 600, color: SURFACE.textSecondary, marginBottom: 12, textAlign: "center" }}>
           {ANALYSIS_MSGS[analysisStep]}
@@ -559,7 +729,6 @@ function MatchesView({ initialPlanIdx, onClearInitial }: { initialPlanIdx?: numb
           <img src={selected.photo} alt={selected.name} style={{ width: 56, height: 56, borderRadius: 28, objectFit: "cover" }} />
           <div>
             <div style={{ fontSize: 20, fontWeight: 800, color: SURFACE.textPrimary }}>{selected.name}, {selected.age}</div>
-            <div style={{ fontSize: 12, fontFamily: FONT_MONO, color: COLORS.limeCreem }}>{selected.compatibility} match</div>
           </div>
         </div>
 
@@ -702,15 +871,6 @@ function MatchesView({ initialPlanIdx, onClearInitial }: { initialPlanIdx?: numb
             }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>
                 {m.name}, {m.age}
-              </div>
-              <div style={{
-                fontSize: 11,
-                fontFamily: FONT_MONO,
-                fontWeight: 600,
-                color: COLORS.limeCreem,
-                marginTop: 2,
-              }}>
-                {m.compatibility} match
               </div>
             </div>
           </div>

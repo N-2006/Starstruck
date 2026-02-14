@@ -16,38 +16,38 @@ const ANALYSIS_STEPS = [
 ];
 
 const SUGGESTED_BIO =
-  "Indie music obsessive with a soft spot for A24 films and late-night coding sessions. Probably rating your favorite movie 3.5 stars on Letterboxd right now.";
+  "Front-end enthusiast who codes at night and listens to Drake on repeat. Building fitness apps, prepping for interviews, and occasionally dabbling in machine learning.";
 
 const FINDINGS = [
   {
     label: "Music Personality",
-    value: "Indie Explorer",
-    detail: "You dig deep cuts and niche artists — your top genres span dream pop, shoegaze, and alt-R&B.",
+    value: "Hip Hop & R&B Loyalist",
+    detail: "Top artists: Drake, The Weeknd, Travis Scott, Kendrick Lamar, Frank Ocean. Peak listening between 9PM–2AM.",
     color: COLORS.limeCreem,
   },
   {
     label: "Film Taste",
-    value: "Art-House Devotee",
-    detail: "142 films logged · 3.9★ average · heavy on slow burns and foreign cinema.",
+    value: "Blockbuster Cinephile",
+    detail: "Gravitates toward critically acclaimed blockbusters — Interstellar, Whiplash, Parasite, Oppenheimer.",
     color: COLORS.brightAmber,
   },
   {
     label: "Code Style",
     value: "Night Owl Builder",
-    detail: "Peak commits between 10PM–2AM · mostly TypeScript · 23 repos.",
+    detail: "Peak commits at 7PM · HTML, PHP, JavaScript, CSS · 20 repos · starred topics include interview-prep and machine learning.",
     color: COLORS.softPeriwinkle,
   },
 ];
 
 const VIBE_TAGS = [
   "Night Owl",
-  "Vinyl Collector",
-  "Bookworm",
-  "Coffee Snob",
-  "Film Buff",
-  "Indie Head",
-  "Deep Thinker",
-  "Creative Coder",
+  "Hip Hop Head",
+  "Front-End Dev",
+  "Interview Grinder",
+  "Fitness Tech",
+  "Drake Stan",
+  "Hackathon Regular",
+  "ML Curious",
 ];
 
 function RefreshIcon({ size = 18, color = "currentColor" }: { size?: number; color?: string }) {
