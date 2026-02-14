@@ -925,14 +925,450 @@ function MatchesView({ initialPlanIdx, onClearInitial }: { initialPlanIdx?: numb
   );
 }
 
-function DatesView() {
-  const dates = [
-    { name: "Luna", photo: "/profile_photos/3.png", place: "Blue Note Jazz Club", date: "Fri, Feb 20 · 8:00 PM", status: "confirmed" as const },
-    { name: "Priya", photo: "/profile_photos/4.png", place: "MoMA", date: "Sat, Feb 21 · 2:00 PM", status: "confirmed" as const },
-    { name: "Chloe", photo: "/profile_photos/6.png", place: "Comedy Cellar", date: "Tue, Feb 25 · 9:30 PM", status: "pending" as const },
-    { name: "Iris", photo: "/profile_photos/10.png", place: "Metrograph Cinema", date: "Sun, Mar 1 · 4:00 PM", status: "pending" as const },
-  ];
+interface DateEntry {
+  name: string;
+  photo: string;
+  place: string;
+  date: string;
+  status: "confirmed" | "pending";
+  matchRef: MatchProfile;
+}
 
+const DATES: DateEntry[] = [
+  { name: "Luna", photo: "/profile_photos/3.png", place: "Blue Note Jazz Club", date: "Fri, Feb 20 \u00b7 8:00 PM", status: "confirmed", matchRef: MATCHES[0] },
+  { name: "Priya", photo: "/profile_photos/4.png", place: "MoMA", date: "Sat, Feb 21 \u00b7 2:00 PM", status: "confirmed", matchRef: MATCHES[1] },
+  { name: "Chloe", photo: "/profile_photos/6.png", place: "Comedy Cellar", date: "Tue, Feb 25 \u00b7 9:30 PM", status: "pending", matchRef: MATCHES[2] },
+  { name: "Iris", photo: "/profile_photos/10.png", place: "Metrograph Cinema", date: "Sun, Mar 1 \u00b7 4:00 PM", status: "pending", matchRef: MATCHES[3] },
+];
+
+function CupidIcon({ size = 24, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
+    </svg>
+  );
+}
+
+function SendIcon({ size = 20, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+  );
+}
+
+function DateDetailView({ dateEntry, userName, onBack }: { dateEntry: DateEntry; userName: string; onBack: () => void }) {
+  const match = dateEntry.matchRef;
+  const pub = match.publicProfile;
+  const priv = match.privateProfile;
+  const xref = match.crossref;
+
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+
+  const chatEndRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) node.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const sendMessage = async () => {
+    const text = inputValue.trim();
+    if (!text || isLoading) return;
+
+    const userMsg = { role: "user" as const, content: text };
+    const newMessages = [...chatMessages, userMsg];
+    setChatMessages(newMessages);
+    setInputValue("");
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:8000/coach/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_a_name: userName || "User",
+          user_b_name: match.name,
+          user_a_dossier: {
+            public: {
+              vibe: "Tech-savvy night owl with eclectic taste",
+              tags: ["web dev", "hip hop", "film", "coding", "ML"],
+              schedule_pattern: "night_owl",
+            },
+            private: {
+              summary: "A developer and music enthusiast who codes late into the night.",
+              traits: ["night owl", "builder", "music lover"],
+              interests: ["Drake", "TypeScript", "Interstellar"],
+              deep_cuts: ["Hackathon regular", "Drake stan"],
+            },
+          },
+          user_b_dossier: {
+            public: {
+              vibe: pub.vibe,
+              tags: pub.tags,
+              schedule_pattern: pub.schedule,
+            },
+            private: {
+              summary: priv.summary,
+              traits: priv.traits,
+              interests: priv.interests,
+              deep_cuts: priv.deepCuts,
+            },
+          },
+          crossref: {
+            shared: xref.shared.map((s) => ({ signal: s.title, detail: s.description, source: "both" })),
+            complementary: xref.complementary.map((c) => ({ signal: c.title, detail: c.description, source: "both" })),
+            tension_points: xref.tensionPoints.map((t) => ({ signal: t.title, detail: t.description, source: "both" })),
+            citations: xref.citations,
+          },
+          message: text,
+          history: newMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      const data = await res.json();
+      setChatMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+    } catch {
+      setChatMessages((prev) => [...prev, { role: "assistant", content: "Sorry, I couldn't connect right now. Try again in a moment." }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sectionLabel = (text: string, icon?: React.ReactNode) => (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      fontSize: 11,
+      fontWeight: 700,
+      color: SURFACE.textTertiary,
+      textTransform: "uppercase" as const,
+      fontFamily: FONT_MONO,
+      letterSpacing: 1.5,
+      marginBottom: 10,
+      marginTop: 24,
+    }}>
+      {icon}
+      {text}
+    </div>
+  );
+
+  const pill = (text: string, color: string) => (
+    <span key={text} style={{
+      fontSize: 12,
+      fontWeight: 600,
+      color,
+      background: `${color}1A`,
+      padding: "5px 12px",
+      borderRadius: 20,
+      border: `1px solid ${color}30`,
+    }}>
+      {text}
+    </span>
+  );
+
+  if (showChat) {
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{
+          padding: "16px 20px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          borderBottom: `1px solid ${SURFACE.border}`,
+        }}>
+          <button
+            onClick={() => setShowChat(false)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: SURFACE.textSecondary, fontSize: 13, fontWeight: 600, fontFamily: FONT_FAMILY }}
+          >
+            \u2190
+          </button>
+          <div style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            background: `${COLORS.hotFuchsia}20`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <CupidIcon size={18} color={COLORS.hotFuchsia} />
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: SURFACE.textPrimary }}>Cupid</div>
+            <div style={{ fontSize: 11, fontFamily: FONT_MONO, color: COLORS.hotFuchsia, letterSpacing: 0.5 }}>AI Date Coach</div>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
+          {chatMessages.length === 0 && (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <CupidIcon size={40} color={`${COLORS.hotFuchsia}60`} />
+              <div style={{ fontSize: 16, fontWeight: 700, color: SURFACE.textPrimary, marginTop: 16, marginBottom: 8 }}>
+                Ask Cupid anything
+              </div>
+              <div style={{ fontSize: 13, color: SURFACE.textSecondary, lineHeight: 1.5, maxWidth: 260, margin: "0 auto 20px" }}>
+                Get personalized advice for your date with {match.name}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+                {[
+                  "What should we talk about?",
+                  "Give me a conversation starter",
+                  "Any red flags to watch for?",
+                ].map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => { setInputValue(q); }}
+                    style={{
+                      background: `${COLORS.softPeriwinkle}0D`,
+                      border: `1px solid ${COLORS.softPeriwinkle}20`,
+                      borderRadius: 16,
+                      padding: "10px 16px",
+                      color: COLORS.softPeriwinkle,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      fontFamily: FONT_FAMILY,
+                      cursor: "pointer",
+                      maxWidth: 260,
+                    }}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {chatMessages.map((msg, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              {msg.role === "assistant" && (
+                <div style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  background: `${COLORS.hotFuchsia}20`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  marginRight: 8,
+                  marginTop: 2,
+                }}>
+                  <CupidIcon size={14} color={COLORS.hotFuchsia} />
+                </div>
+              )}
+              <div style={{
+                maxWidth: "75%",
+                padding: "12px 16px",
+                borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                background: msg.role === "user" ? COLORS.softPeriwinkle : "#5823A5",
+                color: msg.role === "user" ? "#fff" : SURFACE.textPrimary,
+                fontSize: 14,
+                lineHeight: 1.5,
+                fontFamily: FONT_FAMILY,
+              }}>
+                {msg.content}
+              </div>
+            </div>
+          ))}
+
+          {isLoading && (
+            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+              <div style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                background: `${COLORS.hotFuchsia}20`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <CupidIcon size={14} color={COLORS.hotFuchsia} />
+              </div>
+              <div style={{
+                padding: "12px 16px",
+                borderRadius: "18px 18px 18px 4px",
+                background: "#5823A5",
+                color: SURFACE.textTertiary,
+                fontSize: 14,
+                fontFamily: FONT_MONO,
+              }}>
+                thinking...
+              </div>
+            </div>
+          )}
+
+          <div ref={chatEndRef} />
+        </div>
+
+        <div style={{
+          padding: "12px 16px 20px",
+          borderTop: `1px solid ${SURFACE.border}`,
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+        }}>
+          <input
+            type="text"
+            placeholder="Ask Cupid..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            style={{
+              flex: 1,
+              height: 44,
+              borderRadius: 22,
+              border: `1px solid ${SURFACE.border}`,
+              background: "#5823A5",
+              color: SURFACE.textPrimary,
+              fontSize: 14,
+              fontFamily: FONT_FAMILY,
+              padding: "0 18px",
+              outline: "none",
+            }}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!inputValue.trim() || isLoading}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              border: "none",
+              background: inputValue.trim() && !isLoading ? COLORS.hotFuchsia : `${COLORS.hotFuchsia}30`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: inputValue.trim() && !isLoading ? "pointer" : "default",
+              flexShrink: 0,
+            }}
+          >
+            <SendIcon size={18} color={inputValue.trim() && !isLoading ? "#fff" : "rgba(255,255,255,0.3)"} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-enter" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 24px" }}>
+        <button
+          onClick={onBack}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0 16px", color: SURFACE.textSecondary, fontSize: 13, fontWeight: 600, fontFamily: FONT_FAMILY }}
+        >
+          \u2190 Back
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 4 }}>
+          <img src={match.photo} alt={match.name} style={{ width: 64, height: 64, borderRadius: 32, objectFit: "cover" }} />
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: SURFACE.textPrimary }}>{match.name}, {match.age}</div>
+            <div style={{ fontSize: 12, fontFamily: FONT_MONO, color: COLORS.limeCreem, marginTop: 2 }}>
+              {dateEntry.place} \u00b7 {dateEntry.date}
+            </div>
+          </div>
+        </div>
+
+        {sectionLabel("Public Profile")}
+        <div style={{
+          background: "#5823A5",
+          border: `1px solid ${SURFACE.border}`,
+          borderRadius: 20,
+          padding: 20,
+        }}>
+          <div style={{ fontSize: 15, color: SURFACE.textPrimary, fontStyle: "italic", lineHeight: 1.5, marginBottom: 16 }}>
+            "{pub.vibe}"
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+            {pub.tags.map((t) => pill(t, COLORS.softPeriwinkle))}
+          </div>
+          <div style={{ fontSize: 12, fontFamily: FONT_MONO, color: SURFACE.textSecondary }}>
+            Schedule: <span style={{ color: COLORS.brightAmber, fontWeight: 600 }}>{pub.schedule}</span>
+          </div>
+        </div>
+
+        {sectionLabel("Private Profile \u2014 unlocked", <LockOpenIcon size={12} color={COLORS.limeCreem} />)}
+        <div style={{
+          background: "#5823A5",
+          border: `1px solid ${COLORS.limeCreem}20`,
+          borderRadius: 20,
+          padding: 20,
+        }}>
+          <div style={{ fontSize: 14, color: SURFACE.textSecondary, lineHeight: 1.6, marginBottom: 16 }}>{priv.summary}</div>
+          <div style={{ fontSize: 11, fontFamily: FONT_MONO, color: SURFACE.textTertiary, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Traits</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+            {priv.traits.map((t) => pill(t, COLORS.limeCreem))}
+          </div>
+          <div style={{ fontSize: 11, fontFamily: FONT_MONO, color: SURFACE.textTertiary, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Interests</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+            {priv.interests.map((t) => pill(t, COLORS.brightAmber))}
+          </div>
+        </div>
+
+        {sectionLabel("Shared")}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {xref.shared.map((item) => (
+            <div key={item.title} style={{ background: `${COLORS.limeCreem}0D`, border: `1px solid ${COLORS.limeCreem}20`, borderRadius: 16, padding: "14px 16px" }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.limeCreem, marginBottom: 4 }}>{item.title}</div>
+              <div style={{ fontSize: 13, color: SURFACE.textSecondary, lineHeight: 1.5 }}>{item.description}</div>
+            </div>
+          ))}
+        </div>
+
+        {sectionLabel("Complementary")}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {xref.complementary.map((item) => (
+            <div key={item.title} style={{ background: `${COLORS.brightAmber}0D`, border: `1px solid ${COLORS.brightAmber}20`, borderRadius: 16, padding: "14px 16px" }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.brightAmber, marginBottom: 4 }}>{item.title}</div>
+              <div style={{ fontSize: 13, color: SURFACE.textSecondary, lineHeight: 1.5 }}>{item.description}</div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setShowChat(true)}
+          style={{
+            width: "100%",
+            height: 52,
+            borderRadius: 26,
+            border: "none",
+            background: COLORS.hotFuchsia,
+            color: "#fff",
+            fontSize: 16,
+            fontWeight: 700,
+            fontFamily: FONT_FAMILY,
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+            cursor: "pointer",
+            marginTop: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+          }}
+        >
+          <CupidIcon size={20} color="#fff" />
+          Ask Cupid
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DatesView({ onSelectDate }: { onSelectDate: (d: DateEntry) => void }) {
   const statusColors = {
     confirmed: COLORS.limeCreem,
     pending: COLORS.brightAmber,
@@ -941,16 +1377,17 @@ function DatesView() {
   return (
     <div style={{ padding: "0 16px", flex: 1, overflowY: "auto" }}>
       <h2 style={{ fontSize: 24, fontWeight: 800, color: SURFACE.textPrimary, margin: "0 0 20px 8px" }}>Upcoming Dates</h2>
-      {dates.length === 0 ? (
+      {DATES.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: SURFACE.textSecondary, fontSize: 15 }}>
           No dates planned yet
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {dates.map((d, i) => (
+          {DATES.map((d, i) => (
             <div
               key={d.name + d.date}
               className="card-enter"
+              onClick={() => d.status === "confirmed" && onSelectDate(d)}
               style={{
                 background: "#5823A5",
                 border: `1px solid ${SURFACE.border}`,
@@ -961,8 +1398,9 @@ function DatesView() {
                 alignItems: "center",
                 position: "relative",
                 overflow: "hidden",
-                cursor: "pointer",
+                cursor: d.status === "confirmed" ? "pointer" : "default",
                 animationDelay: `${i * 0.06}s`,
+                opacity: d.status === "confirmed" ? 1 : 0.7,
               }}
             >
               <div style={{
@@ -1030,7 +1468,7 @@ function ProfileView() {
         }}>
           <PersonIcon size={40} color={COLORS.softPeriwinkle} />
         </div>
-        <span style={{ fontSize: 22, fontWeight: 800, color: SURFACE.textPrimary }}>Your Profile</span>
+        <span style={{ fontSize: 22, fontWeight: 800, color: SURFACE.textPrimary }}>{userName || "Your Profile"}</span>
         <span style={{ fontSize: 13, color: SURFACE.textSecondary, marginTop: 4 }}>NYC · 26</span>
       </div>
 
@@ -1066,7 +1504,7 @@ function ProfileView() {
 
 const PRIYA_NAME = "Priya";
 
-export function SwipeScreen({ userPhoto }: { userPhoto?: string | null }) {
+export function SwipeScreen({ userPhoto, userName }: { userPhoto?: string | null; userName?: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<Tab>("swipe");
   const [matchOverlay, setMatchOverlay] = useState<MatchProfile | null>(null);
@@ -1074,6 +1512,7 @@ export function SwipeScreen({ userPhoto }: { userPhoto?: string | null }) {
   const [matchShowButton, setMatchShowButton] = useState(false);
   const [viewingProfile, setViewingProfile] = useState<MatchProfile | null>(null);
   const [planDateIdx, setPlanDateIdx] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<DateEntry | null>(null);
 
   const handleSwipeLeft = useCallback(() => {
     setCurrentIndex((prev) => prev + 1);
@@ -1224,7 +1663,8 @@ export function SwipeScreen({ userPhoto }: { userPhoto?: string | null }) {
             }}
           />
         )}
-        {activeTab === "dates" && <DatesView />}
+        {activeTab === "dates" && !selectedDate && <DatesView onSelectDate={(d) => setSelectedDate(d)} />}
+        {activeTab === "dates" && selectedDate && <DateDetailView dateEntry={selectedDate} userName={userName || ""} onBack={() => setSelectedDate(null)} />}
         {activeTab === "profile" && <ProfileView />}
 
         {/* ── Match count ── */}
@@ -1328,7 +1768,7 @@ export function SwipeScreen({ userPhoto }: { userPhoto?: string | null }) {
                   <img src={matchOverlay.photo} alt={matchOverlay.name} style={{ width: 72, height: 72, borderRadius: 36, objectFit: "cover", border: `2px solid ${COLORS.hotFuchsia}` }} />
                 </div>
                 <div style={{ fontSize: 15, color: SURFACE.textSecondary }}>
-                  You and {matchOverlay.name} liked each other
+                  {userName || "You"} and {matchOverlay.name} liked each other
                 </div>
               </div>
             )}

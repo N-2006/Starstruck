@@ -21,6 +21,8 @@ from app.graph.nodes.ingest import _fetch_user_data
 from app.models.schemas import (
     MatchRequest,
     CoachingResponse,
+    CoachChatRequest,
+    CoachChatResponse,
     ConnectRequest,
     ConnectResponse,
     AnalyzeRequest,
@@ -47,6 +49,7 @@ app.add_middleware(
 )
 
 pipeline = build_graph()
+llm_service = LLMService()
 
 CONNECTOR_MAP: dict[str, type] = {
     "github": GitHubConnector,
@@ -237,3 +240,17 @@ async def stream_pipeline(request: MatchRequest):
         yield {"event": "done", "data": "{}"}
 
     return EventSourceResponse(event_generator())
+
+
+@app.post("/coach/chat", response_model=CoachChatResponse)
+async def coach_chat(request: CoachChatRequest):
+    reply = await llm_service.coach_chat(
+        dossier_a=request.user_a_dossier,
+        dossier_b=request.user_b_dossier,
+        crossref=request.crossref,
+        message=request.message,
+        history=[msg.model_dump() for msg in request.history],
+        user_a_name=request.user_a_name,
+        user_b_name=request.user_b_name,
+    )
+    return CoachChatResponse(reply=reply)

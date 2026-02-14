@@ -111,7 +111,14 @@ const PIPELINE_NODES = [
     time: "~3s",
     color: PALETTE.teal,
     icon: "⟡",
-    desc: "Simultaneous API calls to all connected services. Raw responses normalized into unified UserDataBundle per person.",
+    desc: "Concurrent async data ingestion via asyncio.gather() across all connected platform connectors. OAuth 2.0 PKCE for Spotify, public API traversal for GitHub, RSS parsing for Letterboxd, Playwright-driven scraping for Instagram. Raw responses normalized into a unified UserDataBundle schema per user.",
+    bullets: [
+      "Concurrent connector execution via asyncio.gather() — all platforms fetched simultaneously, not sequentially",
+      "OAuth 2.0 PKCE flow for Spotify; stateless public API traversal for GitHub with rate-limit-aware pagination",
+      "RSS feed parsing + HTML scrape fallback for Letterboxd diary entries and film ratings",
+      "Playwright headless browser + Claude Vision multimodal analysis for Instagram screenshot ingestion",
+      "Fault-tolerant design — partial connector failures don't block the pipeline; available data propagates forward",
+    ],
   },
   {
     id: "analyze",
@@ -119,7 +126,14 @@ const PIPELINE_NODES = [
     time: "~4s",
     color: PALETTE.violet,
     icon: "◈",
-    desc: "Claude Sonnet synthesizes raw data into structured personality dossiers — traits, humor style, love language signals, vibe archetype.",
+    desc: "Gemini 2.0 Flash synthesizes raw multi-platform data into structured two-tier personality dossiers — public-facing vibe tags and private deep-cut trait analysis. Both users processed concurrently.",
+    bullets: [
+      "Dual-tier dossier architecture: public profile (vibe, tags, schedule pattern) visible to all; private profile (traits, deep cuts, specific interests) unlocked only for matches",
+      "Concurrent dual-user analysis via asyncio.gather() — both personality profiles synthesized in parallel",
+      "Structured JSON-enforced LLM output with schema validation — no freeform text, fully machine-parseable",
+      "Cross-platform signal fusion: commit timestamps infer schedule patterns, genre distributions map emotional landscapes, film ratings quantify critical sensibility",
+      "Personalized name injection into all prompts — LLM never uses generic 'Person A' references, always uses actual names",
+    ],
   },
   {
     id: "crossref",
@@ -127,7 +141,14 @@ const PIPELINE_NODES = [
     time: "~3s",
     color: PALETTE.pink,
     icon: "✦",
-    desc: "The core node. Finds shared artists, overlapping films, complementary traits, tension points. Cites specific data points, not generic vibes.",
+    desc: "The core compatibility node. Performs multi-dimensional cross-referencing across both dossiers — identifies shared signals, complementary trait pairings, and tension points. Every claim backed by specific data citations.",
+    bullets: [
+      "Four-axis compatibility analysis: shared interests, complementary traits, tension points, and citation-backed evidence",
+      "Citation-grounded reasoning — every compatibility claim references specific data points (e.g., 'both rated Interstellar 5 stars')",
+      "Venue appropriateness scoring — determines whether shared interests suggest a specific venue type would enhance the meetup",
+      "Conditional graph edge: venue_appropriate flag dynamically routes pipeline to Venue Intelligence node or skips directly to Coach",
+      "Tension points framed constructively — friction areas surfaced as awareness items, not dealbreakers",
+    ],
   },
   {
     id: "venue",
@@ -135,7 +156,14 @@ const PIPELINE_NODES = [
     time: "~2s",
     color: PALETTE.blue,
     icon: "◉",
-    desc: "Google Places search ranked by match context — not just 'good restaurant' but 'this place connects to something in both your profiles.'",
+    desc: "Context-aware venue recommendation powered by Google Places API. Venues ranked not by generic ratings but by semantic relevance to the cross-referenced compatibility profile.",
+    bullets: [
+      "Google Places Nearby Search with location-biased radius and category filtering based on cross-ref signals",
+      "Semantic venue ranking — LLM re-ranks candidate venues against the compatibility profile (shared love of jazz → live music venue)",
+      "Venue metadata enrichment: reviews, photos, hours, and price level extracted for coaching context",
+      "Graceful degradation with curated mock venue fallback when API key is unavailable",
+      "Conditionally executed — only triggered when cross-reference engine determines venue_appropriate = true",
+    ],
   },
   {
     id: "coach",
@@ -143,7 +171,14 @@ const PIPELINE_NODES = [
     time: "~5s",
     color: PALETTE.amber,
     icon: "◎",
-    desc: "Final synthesis of ALL data into a personalized briefing card stack. Each user gets asymmetric advice tailored to their date.",
+    desc: "Real-time conversational AI date coach (Cupid). Full context injection of both dossiers and cross-reference analysis into a persistent chat session. Delivers hyper-personalized, citation-backed advice.",
+    bullets: [
+      "Full-context prompt injection: both user dossiers + complete cross-reference analysis loaded into system prompt for every exchange",
+      "Persistent multi-turn conversation with full chat history threaded through each request",
+      "Asymmetric coaching — each user receives different emphasis and advice tailored to their personality profile",
+      "Real-time streaming via SSE (Server-Sent Events) as pipeline nodes complete — no waiting for full pipeline",
+      "Actionable output: conversation starters pulled from shared interests, red flags from tension points, venue-specific tips from Places data",
+    ],
   },
 ];
 
@@ -268,8 +303,18 @@ function PipelineNode({ node, index, isActive, onClick }) {
             {node.time}
           </span>
         </div>
-        <div style={{ fontSize: 11.5, color: PALETTE.dim, lineHeight: 1.55, fontFamily: FONTS.body, maxHeight: isActive ? 60 : 0, overflow: "hidden", transition: "max-height 0.3s ease", opacity: isActive ? 1 : 0 }}>
-          {node.desc}
+        <div style={{ fontSize: 11.5, color: PALETTE.dim, lineHeight: 1.55, fontFamily: FONTS.body, maxHeight: isActive ? 500 : 0, overflow: "hidden", transition: "max-height 0.4s ease", opacity: isActive ? 1 : 0 }}>
+          <div style={{ marginBottom: node.bullets ? 10 : 0 }}>{node.desc}</div>
+          {isActive && node.bullets && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, animation: "fadeIn 0.3s ease" }}>
+              {node.bullets.map((b, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, fontSize: 10.5, lineHeight: 1.5, color: PALETTE.dim, fontFamily: FONTS.mono }}>
+                  <span style={{ color: node.color + "90", flexShrink: 0 }}>→</span>
+                  <span>{b}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

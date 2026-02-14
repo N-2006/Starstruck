@@ -4,12 +4,12 @@ import { styles, COLORS } from "./styles";
 import { ServiceCard } from "./ServiceCard";
 import { SignalStrength } from "./SignalStrength";
 import { BottomSheet } from "./BottomSheet";
-import { ChevronLeftIcon, MusicIcon, FilmIcon, CodeIcon, CameraIcon, BookIcon } from "./icons";
+import { ChevronLeftIcon, MusicIcon, FilmIcon, CodeIcon, CameraIcon, LinkedInIcon } from "./icons";
 import { connectService } from "../../services/api";
 
 // ── Service definitions ──
 
-type ServiceId = "spotify" | "letterboxd" | "github" | "instagram" | "books";
+type ServiceId = "spotify" | "letterboxd" | "github" | "instagram" | "linkedin";
 
 interface ServiceDef {
   id: ServiceId;
@@ -69,15 +69,15 @@ const SERVICES: ServiceDef[] = [
     mockPreview: "@username \u00b7 aesthetic captured",
   },
   {
-    id: "books",
-    name: "Books",
-    description: "Reading taste & interests",
-    icon: <BookIcon size={24} color="#BB97FF" />,
-    brandColor: "#E8A87C",
+    id: "linkedin",
+    name: "LinkedIn",
+    description: "Career & professional interests",
+    icon: <LinkedInIcon size={24} color="#BB97FF" />,
+    brandColor: "#0A66C2",
     accentColor: COLORS.brightAmber,
     required: false,
     signalWeight: 15,
-    mockPreview: "12 books \u00b7 mostly literary fiction",
+    mockPreview: "Product Designer \u00b7 500+ connections",
   },
 ];
 
@@ -93,7 +93,7 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
     letterboxd: false,
     github: false,
     instagram: false,
-    books: false,
+    linkedin: false,
   });
 
   const [loading, setLoading] = useState<Record<ServiceId, boolean>>({
@@ -101,7 +101,7 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
     letterboxd: false,
     github: false,
     instagram: false,
-    books: false,
+    linkedin: false,
   });
 
   const [previews, setPreviews] = useState<Record<ServiceId, string>>({
@@ -109,7 +109,7 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
     letterboxd: "",
     github: "",
     instagram: "",
-    books: "",
+    linkedin: "",
   });
 
   const [usernames, setUsernames] = useState<Record<ServiceId, string | null>>({
@@ -117,7 +117,7 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
     letterboxd: null,
     github: null,
     instagram: null,
-    books: null,
+    linkedin: null,
   });
 
   const [sheetService, setSheetService] = useState<ServiceDef | null>(null);
@@ -228,6 +228,7 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
         {sheetService && (
           <BottomSheet
             serviceName={sheetService.name}
+            serviceId={sheetService.id}
             brandColor={sheetService.accentColor}
             onClose={() => setSheetService(null)}
             onSubmit={handleSheetSubmit}

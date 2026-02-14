@@ -6,7 +6,7 @@ import { ChevronLeftIcon } from "../ConnectAccounts/icons";
 const MAX_PHOTOS = 6;
 
 interface PhotoUploadProps {
-  onContinue: (photos: string[]) => void;
+  onContinue: (photos: string[], name: string) => void;
 }
 
 function PlusIcon({ size = 24, color = "currentColor" }: { size?: number; color?: string }) {
@@ -29,6 +29,7 @@ function XIcon({ size = 16, color = "currentColor" }: { size?: number; color?: s
 
 export function PhotoUpload({ onContinue }: PhotoUploadProps) {
   const [photos, setPhotos] = useState<string[]>([]);
+  const [name, setName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,6 +83,38 @@ export function PhotoUpload({ onContinue }: PhotoUploadProps) {
               Upload up to 6 photos to show off your personality. Your first photo will be your profile picture.
             </p>
           </header>
+
+          <div style={{ padding: "0 24px 0" }}>
+            <label style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: SURFACE.textSecondary,
+              textTransform: "uppercase" as const,
+              fontFamily: FONT_MONO,
+              letterSpacing: 1,
+              display: "block",
+              marginBottom: 8,
+            }}>
+              Your Name
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your first name"
+              style={{
+                width: "100%",
+                background: "#5823A5",
+                border: `1px solid ${SURFACE.border}`,
+                borderRadius: 16,
+                padding: "14px 16px",
+                fontSize: 15,
+                fontFamily: "inherit",
+                color: "rgba(255,255,255,0.9)",
+                outline: "none",
+                boxSizing: "border-box" as const,
+              }}
+            />
+          </div>
 
           <input
             ref={fileInputRef}
@@ -219,12 +252,12 @@ export function PhotoUpload({ onContinue }: PhotoUploadProps) {
         {/* ── Sticky CTA ── */}
         <div style={styles.stickyBottom}>
           <button
-            onClick={photos.length > 0 ? () => onContinue(photos) : undefined}
+            onClick={photos.length > 0 && name.trim() ? () => onContinue(photos, name.trim()) : undefined}
             style={{
               ...styles.ctaButton,
-              background: photos.length > 0 ? COLORS.softPeriwinkle : `${COLORS.softPeriwinkle}4D`,
-              color: photos.length > 0 ? "#fff" : "rgba(255,255,255,0.4)",
-              pointerEvents: photos.length > 0 ? "auto" : "none",
+              background: photos.length > 0 && name.trim() ? COLORS.softPeriwinkle : `${COLORS.softPeriwinkle}4D`,
+              color: photos.length > 0 && name.trim() ? "#fff" : "rgba(255,255,255,0.4)",
+              pointerEvents: photos.length > 0 && name.trim() ? "auto" : "none",
             }}
           >
             Continue
