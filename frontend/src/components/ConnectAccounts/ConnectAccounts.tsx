@@ -5,6 +5,7 @@ import { ServiceCard } from "./ServiceCard";
 import { SignalStrength } from "./SignalStrength";
 import { BottomSheet } from "./BottomSheet";
 import { ChevronLeftIcon, MusicIcon, FilmIcon, CodeIcon, CameraIcon, LinkedInIcon } from "./icons";
+import { connectService } from "../../services/api";
 
 // ── Service definitions ──
 
@@ -83,7 +84,7 @@ const SERVICES: ServiceDef[] = [
 // ── Main screen ──
 
 interface ConnectAccountsProps {
-  onContinue?: () => void;
+  onContinue?: (identifiers: Record<string, string | null>) => void;
 }
 
 export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
@@ -103,6 +104,22 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
     linkedin: false,
   });
 
+  const [previews, setPreviews] = useState<Record<ServiceId, string>>({
+    spotify: "",
+    letterboxd: "",
+    github: "",
+    instagram: "",
+    linkedin: "",
+  });
+
+  const [usernames, setUsernames] = useState<Record<ServiceId, string | null>>({
+    spotify: null,
+    letterboxd: null,
+    github: null,
+    instagram: null,
+    linkedin: null,
+  });
+
   const [sheetService, setSheetService] = useState<ServiceDef | null>(null);
 
   const signalPercentage = SERVICES.reduce(
@@ -112,28 +129,31 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
 
   const canContinue = Object.values(connected).some(Boolean);
 
-  const simulateConnect = useCallback((id: ServiceId) => {
+  const realConnect = useCallback(async (id: ServiceId, username: string) => {
     setLoading((prev) => ({ ...prev, [id]: true }));
-    setTimeout(() => {
-      setLoading((prev) => ({ ...prev, [id]: false }));
+    setUsernames((prev) => ({ ...prev, [id]: username }));
+    try {
+      const result = await connectService(id, username);
+      setPreviews((prev) => ({ ...prev, [id]: result.preview }));
       setConnected((prev) => ({ ...prev, [id]: true }));
-    }, 1500);
+    } catch {
+      setPreviews((prev) => ({ ...prev, [id]: "Connected (limited data)" }));
+      setConnected((prev) => ({ ...prev, [id]: true }));
+    } finally {
+      setLoading((prev) => ({ ...prev, [id]: false }));
+    }
   }, []);
 
   const handleConnect = useCallback((service: ServiceDef) => {
-    if (service.id === "spotify") {
-      simulateConnect("spotify");
-    } else {
-      setSheetService(service);
-    }
-  }, [simulateConnect]);
+    setSheetService(service);
+  }, []);
 
-  const handleSheetSubmit = useCallback((_value: string) => {
+  const handleSheetSubmit = useCallback((value: string) => {
     if (!sheetService) return;
     const id = sheetService.id;
     setSheetService(null);
-    simulateConnect(id);
-  }, [sheetService, simulateConnect]);
+    realConnect(id, value);
+  }, [sheetService, realConnect]);
 
   const handleDisconnect = useCallback((id: ServiceId) => {
     setConnected((prev) => ({ ...prev, [id]: false }));
@@ -178,7 +198,7 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
                 isLoading={loading[service.id]}
                 onConnect={() => handleConnect(service)}
                 onDisconnect={() => handleDisconnect(service.id)}
-                dataPreview={service.mockPreview}
+                dataPreview={previews[service.id] || service.mockPreview}
                 index={i}
               />
             ))}
@@ -191,7 +211,7 @@ export function ConnectAccounts({ onContinue }: ConnectAccountsProps) {
         {/* ── Sticky CTA ── */}
         <div style={styles.stickyBottom}>
           <button
-            onClick={canContinue ? onContinue : undefined}
+            onClick={canContinue ? () => onContinue?.(usernames) : undefined}
             style={{
               ...styles.ctaButton,
               background: canContinue ? COLORS.softPeriwinkle : `${COLORS.softPeriwinkle}4D`,

@@ -10,11 +10,13 @@ class UserDataBundle(TypedDict, total=False):
     github: dict[str, Any]
     books: dict[str, Any]
     instagram: dict[str, Any]
+    linkedin: dict[str, Any]
     places: dict[str, Any]
 
 
 class UserProfile(TypedDict, total=False):
     username: str
+    identifiers: dict[str, str | None]
     raw_data: UserDataBundle
     dossier: dict[str, Any]
 

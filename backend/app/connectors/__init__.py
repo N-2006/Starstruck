@@ -4,6 +4,7 @@ from app.connectors.letterboxd import LetterboxdConnector
 from app.connectors.github import GitHubConnector
 from app.connectors.books import BooksConnector
 from app.connectors.instagram import InstagramConnector
+from app.connectors.linkedin import LinkedInConnector
 from app.connectors.places import PlacesConnector
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "GitHubConnector",
     "BooksConnector",
     "InstagramConnector",
+    "LinkedInConnector",
     "PlacesConnector",
 ]
