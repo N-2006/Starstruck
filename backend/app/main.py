@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 
 import asyncio
 import logging
@@ -28,6 +29,8 @@ from app.models.schemas import (
     AnalysisResult,
     MatchInput,
     MatchResult,
+    ProfileResponse,
+    UserInput,
 )
 from app.services.findings import generate_findings
 from app.services.llm import LLMService
@@ -171,21 +174,47 @@ def _build_identifiers(user: Any) -> dict[str, str | None]:
     }
 
 
+@app.post("/profile", response_model=ProfileResponse)
+async def analyze_profile(request: UserInput):
+    llm = LLMService()
+    
+    raw_data = {}
+    if request.letterboxd_username:
+        # Use connector instead of Service
+        connector = LetterboxdConnector()
+        # Fetch returns dict, we put it under the service key
+        raw_data["letterboxd"] = await connector.fetch(request.letterboxd_username)
+    
+    # You might want to support other inputs here too, but for now this matches original logic
+    
+    dossier = await llm.profile_analysis(raw_data)
+    return ProfileResponse(dossier=dossier)
+
+
 @app.post("/run", response_model=CoachingResponse)
 async def run_pipeline(request: MatchRequest):
     initial_state = {
         "user_a": {
             "username": request.user_a.github_username or "",
             "identifiers": _build_identifiers(request.user_a),
+            "book_titles": request.user_a.book_titles or [],
+            "location": request.user_a.location,
         },
         "user_b": {
             "username": request.user_b.github_username or "",
             "identifiers": _build_identifiers(request.user_b),
+            "book_titles": request.user_b.book_titles or [],
+            "location": request.user_b.location,
         },
         "include_venue": request.include_venue,
     }
-    _result = await pipeline.ainvoke(initial_state)
-    return CoachingResponse(user_a_cards=[], user_b_cards=[])
+    result = await pipeline.ainvoke(initial_state)
+    return CoachingResponse(
+        venues=result.get("venues", []),
+        coaching_a=result.get("coaching_a", {}),
+        coaching_b=result.get("coaching_b", {}),
+        cross_ref=result.get("cross_ref", {})
+    )
 
 
 @app.post("/stream")
@@ -195,15 +224,19 @@ async def stream_pipeline(request: MatchRequest):
             "user_a": {
                 "username": request.user_a.github_username or "",
                 "identifiers": _build_identifiers(request.user_a),
+                "book_titles": request.user_a.book_titles or [],
+                "location": request.user_a.location,
             },
             "user_b": {
                 "username": request.user_b.github_username or "",
                 "identifiers": _build_identifiers(request.user_b),
+                "book_titles": request.user_b.book_titles or [],
+                "location": request.user_b.location,
             },
             "include_venue": request.include_venue,
         }
         async for event in pipeline.astream(initial_state):
-            yield {"event": "node_complete", "data": str(event)}
+            yield {"event": "node_complete", "data": json.dumps(event)}
         yield {"event": "done", "data": "{}"}
 
     return EventSourceResponse(event_generator())

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, type CSSProperties } from "react";
 import "../ConnectAccounts/connectAccounts.css";
 import { COLORS, SURFACE, FONT_FAMILY, FONT_MONO } from "../ConnectAccounts/styles";
 import { SwipeCard, HeartIcon, XMarkIcon, StarIcon } from "./SwipeCard";
+import { runPipeline } from "../../services/api";
 
 type Tab = "swipe" | "matches" | "dates" | "profile";
 
@@ -592,10 +593,54 @@ function MatchesView({ initialPlanIdx, onClearInitial }: { initialPlanIdx?: numb
     setPhase("confirm");
   };
 
-  const startPlanning = () => {
+  const startPlanning = async () => {
     setPhase("analyzing");
     setAnalysisStep(0);
     setAnalysisProgress(0);
+
+    const stepDuration = 2000 / ANALYSIS_MSGS.length;
+    const stepInterval = setInterval(() => {
+      setAnalysisStep((prev) => (prev >= ANALYSIS_MSGS.length - 1 ? prev : prev + 1));
+    }, stepDuration);
+
+    const progressInterval = setInterval(() => {
+      setAnalysisProgress((prev) => (prev >= 100 ? 100 : prev + 5));
+    }, 100);
+
+    try {
+      const request = {
+        user_a: {
+          spotify_username: "aditya",
+          letterboxd_username: "aditya",
+          location: "New York, NY"
+        },
+        user_b: {
+          spotify_username: selected?.name.toLowerCase(),
+          letterboxd_username: selected?.name.toLowerCase(),
+          location: "New York, NY"
+        },
+        include_venue: true
+      };
+
+      const result = await runPipeline(request);
+
+      if (selected && result.venues.length > 0) {
+        const topVenue = result.venues[0];
+        selected.suggestion = {
+          place: topVenue.name,
+          address: topVenue.address || "Local area",
+          date: "TBD",
+          reason: topVenue.reason
+        };
+      }
+    } catch (err) {
+      console.error("Plumbing error:", err);
+    } finally {
+      clearInterval(stepInterval);
+      clearInterval(progressInterval);
+      setAnalysisProgress(100);
+      setPhase("suggestion");
+    }
   };
 
   useEffect(() => {
@@ -697,10 +742,10 @@ function MatchesView({ initialPlanIdx, onClearInitial }: { initialPlanIdx?: numb
           margin: "20px auto",
         }}>
           {[
-            <svg key="music" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
-            <svg key="film" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>,
-            <svg key="map" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-            <svg key="wine" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M8 2h8l-1 9a5 5 0 0 1-10 0L8 2z"/><path d="M12 15v7"/><path d="M8 22h8"/></svg>,
+            <svg key="music" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>,
+            <svg key="film" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" /><line x1="7" y1="2" x2="7" y2="22" /><line x1="17" y1="2" x2="17" y2="22" /><line x1="2" y1="12" x2="22" y2="12" /><line x1="2" y1="7" x2="7" y2="7" /><line x1="2" y1="17" x2="7" y2="17" /><line x1="17" y1="7" x2="22" y2="7" /><line x1="17" y1="17" x2="22" y2="17" /></svg>,
+            <svg key="map" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>,
+            <svg key="wine" width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={COLORS.softPeriwinkle} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M8 2h8l-1 9a5 5 0 0 1-10 0L8 2z" /><path d="M12 15v7" /><path d="M8 22h8" /></svg>,
             <StarIcon size={28} color={COLORS.softPeriwinkle} />,
           ][analysisStep % 5]}
         </div>

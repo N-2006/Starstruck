@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     spotify_client_id: str = ""
     spotify_client_secret: str = ""
-    google_places_api_key: str = ""
+    google_maps_api_key: str = ""
     redis_url: str = "redis://localhost:6379"
     database_url: str = ""
     cors_origins: list[str] = ["http://localhost:5173"]

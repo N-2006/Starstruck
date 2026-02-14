@@ -85,6 +85,39 @@ Return ONLY valid JSON with these exact keys:
 Do NOT wrap the JSON in markdown code fences. Return raw JSON only."""
 
 
+VENUE_SYSTEM_PROMPT = """\
+You are a local concierge and matchmaker. You will be used in two modes:
+
+1. BRAINSTORM MODE:
+   Given a cross-reference analysis of two people, suggest 3 creative activity types and specific search queries to find real instances of them.
+   Return ONLY: {"queries": list of {"name": str, "search_query": str}}
+
+2. RANK MODE:
+   Given a cross-reference analysis and a list of real-world candidates (name, address, rating, opening_hours, etc.), select the best 3 that fit the match vibe.
+   IMPORTANT: Use the candidate's `opening_hours` to ensure the venue choice aligns with the users' `schedule_pattern` from the cross-reference (e.g., don't suggest a place that closes early for a pair of night owls).
+   For each selected venue, provide a reason and specific tips.
+   Return ONLY: {"venues": list of objects with {"name", "address", "rating", "opening_hours", "reason", "tips", "relevance_score"}}
+
+Do NOT wrap the JSON in markdown code fences. Return raw JSON only."""
+
+COACHING_SYSTEM_PROMPT = """\
+You are an expert dating coach and conversational strategist. Given two user profiles, their cross-reference analysis, \
+and a selected venue/activity, generate a personalized briefing for ONE of the users.
+
+Your goal is to help this user navigate the interaction smoothly, highlighting opportunities for connection \
+and helping them avoid potential friction.
+
+Return ONLY valid JSON with these exact keys:
+
+"match_intel": 2-3 sentences on why this match has potential (or what the main challenge is).
+"conversation_playbook": list of 3 specific, open-ended questions or topics to bring up, based on shared interests.
+"minefield_map": list of 2 topics or sensitivities to be careful about (based on tension points or private traits).
+"venue_cheat_sheet": 1-2 sentences on why the suggested venue contributes to the vibe.
+"vibe_calibration": A tip on the energy to bring (e.g. "High energy", "Chill and observant").
+
+Do NOT wrap the JSON in markdown code fences. Return raw JSON only."""
+
+
 def _empty_crossref() -> dict:
     return {
         "shared": [],
@@ -170,11 +203,68 @@ class LLMService:
         venue_appropriate = result.pop("venue_appropriate", False)
         return result, venue_appropriate
 
-    async def rank_venues(self, venues: list[dict], context: dict) -> list[dict]:
-        return []
+    async def brainstorm_venue_queries(self, context: dict) -> list[dict]:
+        human_content = json.dumps(context, indent=2, default=str)
 
-    async def generate_coaching(self, cross_ref: dict, profile: dict, venues: list[dict]) -> dict:
-        return {}
+        response = await self._llm.ainvoke([
+            SystemMessage(content=VENUE_SYSTEM_PROMPT),
+            HumanMessage(content=f"BRAINSTORM MODE: Suggest queries based on this analysis:\n{human_content}"),
+        ])
+
+        text = response.content.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
+        try:
+            result = json.loads(text)
+            return result.get("queries", [])
+        except json.JSONDecodeError:
+            return []
+
+    async def rank_venues(self, candidates: list[dict], context: dict) -> list[dict]:
+        data = {
+            "analysis": context,
+            "candidates": candidates
+        }
+        human_content = json.dumps(data, indent=2, default=str)
+
+        response = await self._llm.ainvoke([
+            SystemMessage(content=VENUE_SYSTEM_PROMPT),
+            HumanMessage(content=f"RANK MODE: Select the best 3 venues from these candidates:\n{human_content}"),
+        ])
+
+        text = response.content.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
+        try:
+            result = json.loads(text)
+            return result.get("venues", [])
+        except json.JSONDecodeError:
+            return []
+
+    async def generate_coaching(self, target_user: str, other_user: str, cross_ref: dict, venue: dict | None) -> dict:
+        data = {
+            "target_user_profile": target_user,
+            "other_user_profile": other_user,
+            "cross_reference": cross_ref,
+            "selected_venue": venue
+        }
+        human_content = json.dumps(data, indent=2, default=str)
+
+        response = await self._llm.ainvoke([
+            SystemMessage(content=COACHING_SYSTEM_PROMPT),
+            HumanMessage(content=f"Generate coaching briefing for the target user:\n{human_content}"),
+        ])
+
+        text = response.content.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            return {}
 
     async def coach_chat(
         self,

@@ -25,3 +25,34 @@ export async function analyzeUser(identifiers: Record<string, string | null>): P
   });
   return res.json();
 }
+
+export interface UserInput {
+  spotify_username?: string;
+  letterboxd_username?: string;
+  github_username?: string;
+  book_titles?: string[];
+  location?: string;
+}
+
+export interface MatchRequest {
+  user_a: UserInput;
+  user_b: UserInput;
+  include_venue: boolean;
+}
+
+export interface CoachingResponse {
+  venues: any[];
+  coaching_a: any;
+  coaching_b: any;
+  cross_ref: any;
+}
+
+export async function runPipeline(request: MatchRequest): Promise<CoachingResponse> {
+  const res = await fetch(`${API_BASE}/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) throw new Error("Failed to run pipeline");
+  return res.json();
+}
