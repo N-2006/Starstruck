@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "../ConnectAccounts/connectAccounts.css";
 import { styles, COLORS, SURFACE, FONT_MONO, FONT_FAMILY } from "../ConnectAccounts/styles";
 import { ChevronLeftIcon } from "../ConnectAccounts/icons";
+import { analyzeUser, type AnalysisResult } from "../../services/api";
 
 interface ProfileAnalysisProps {
   onContinue: () => void;
+  identifiers?: Record<string, string | null>;
 }
 
 const ANALYSIS_STEPS = [
@@ -59,18 +61,46 @@ function RefreshIcon({ size = 18, color = "currentColor" }: { size?: number; col
   );
 }
 
-export function ProfileAnalysis({ onContinue }: ProfileAnalysisProps) {
+export function ProfileAnalysis({ onContinue, identifiers }: ProfileAnalysisProps) {
   const [analyzing, setAnalyzing] = useState(true);
   const [progress, setProgress] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [bio, setBio] = useState(SUGGESTED_BIO);
   const [tags, setTags] = useState(VIBE_TAGS);
+  const [findings, setFindings] = useState(FINDINGS);
   const [newTag, setNewTag] = useState("");
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (!identifiers || fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    analyzeUser(identifiers).then((result: AnalysisResult) => {
+      setBio(result.bio || SUGGESTED_BIO);
+      setTags(result.tags.length > 0 ? result.tags : VIBE_TAGS);
+      if (result.findings.length > 0) {
+        const colorMap: Record<string, string> = {
+          "Music": COLORS.limeCreem,
+          "Film": COLORS.brightAmber,
+          "Code": COLORS.softPeriwinkle,
+          "Social": COLORS.hotFuchsia,
+          "Career": COLORS.softPeriwinkle,
+        };
+        setFindings(result.findings.map((f) => ({
+          ...f,
+          color: colorMap[f.label] || COLORS.softPeriwinkle,
+        })));
+      }
+      setAnalyzing(false);
+    }).catch(() => {
+      setAnalyzing(false);
+    });
+  }, [identifiers]);
 
   useEffect(() => {
     if (!analyzing) return;
 
-    const stepDuration = 2500 / ANALYSIS_STEPS.length;
+    const stepDuration = 8000 / ANALYSIS_STEPS.length;
     const stepInterval = setInterval(() => {
       setStepIndex((prev) => {
         if (prev >= ANALYSIS_STEPS.length - 1) {
@@ -83,22 +113,17 @@ export function ProfileAnalysis({ onContinue }: ProfileAnalysisProps) {
 
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
+        if (prev >= 90) {
           clearInterval(progressInterval);
-          return 100;
+          return 90;
         }
-        return prev + 2;
+        return prev + 1;
       });
-    }, 50);
-
-    const timeout = setTimeout(() => {
-      setAnalyzing(false);
-    }, 2800);
+    }, 80);
 
     return () => {
       clearInterval(stepInterval);
       clearInterval(progressInterval);
-      clearTimeout(timeout);
     };
   }, [analyzing]);
 
@@ -106,6 +131,7 @@ export function ProfileAnalysis({ onContinue }: ProfileAnalysisProps) {
     setAnalyzing(true);
     setProgress(0);
     setStepIndex(0);
+    fetchedRef.current = false;
     setBio(SUGGESTED_BIO);
   };
 
@@ -260,7 +286,7 @@ export function ProfileAnalysis({ onContinue }: ProfileAnalysisProps) {
                 </span>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {FINDINGS.map((finding, i) => (
+                  {findings.map((finding, i) => (
                     <div
                       key={finding.label}
                       className="card-enter"
