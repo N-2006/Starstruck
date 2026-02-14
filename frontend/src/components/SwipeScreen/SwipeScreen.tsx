@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, type CSSProperties } from "react";
 import "../ConnectAccounts/connectAccounts.css";
 import { COLORS, SURFACE, FONT_FAMILY, FONT_MONO } from "../ConnectAccounts/styles";
 import { SwipeCard, HeartIcon, XMarkIcon, StarIcon } from "./SwipeCard";
+import { StarstruckAPI } from "../../api";
 
 type Tab = "swipe" | "matches" | "dates" | "profile";
 
@@ -418,10 +419,54 @@ function MatchesView({ initialPlanIdx, onClearInitial }: { initialPlanIdx?: numb
     setPhase("confirm");
   };
 
-  const startPlanning = () => {
+  const startPlanning = async () => {
     setPhase("analyzing");
     setAnalysisStep(0);
     setAnalysisProgress(0);
+
+    const stepDuration = 2000 / ANALYSIS_MSGS.length;
+    const stepInterval = setInterval(() => {
+      setAnalysisStep((prev) => (prev >= ANALYSIS_MSGS.length - 1 ? prev : prev + 1));
+    }, stepDuration);
+
+    const progressInterval = setInterval(() => {
+      setAnalysisProgress((prev) => (prev >= 100 ? 100 : prev + 5));
+    }, 100);
+
+    try {
+      const request = {
+        user_a: {
+          spotify_username: "aditya",
+          letterboxd_username: "aditya",
+          location: "New York, NY"
+        },
+        user_b: {
+          spotify_username: selected?.name.toLowerCase(),
+          letterboxd_username: selected?.name.toLowerCase(),
+          location: "New York, NY"
+        },
+        include_venue: true
+      };
+
+      const result = await StarstruckAPI.runPipeline(request);
+
+      if (selected && result.venues.length > 0) {
+        const topVenue = result.venues[0];
+        selected.suggestion = {
+          place: topVenue.name,
+          address: topVenue.address || "Local area",
+          date: "TBD",
+          reason: topVenue.reason
+        };
+      }
+    } catch (err) {
+      console.error("Plumbing error:", err);
+    } finally {
+      clearInterval(stepInterval);
+      clearInterval(progressInterval);
+      setAnalysisProgress(100);
+      setPhase("suggestion");
+    }
   };
 
   useEffect(() => {

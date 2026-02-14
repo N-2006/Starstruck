@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "../ConnectAccounts/connectAccounts.css";
 import { styles, COLORS, SURFACE, FONT_MONO, FONT_FAMILY } from "../ConnectAccounts/styles";
 import { ChevronLeftIcon } from "../ConnectAccounts/icons";
+import { StarstruckAPI } from "../../api";
 
 interface ProfileAnalysisProps {
   onContinue: () => void;
@@ -65,6 +66,7 @@ export function ProfileAnalysis({ onContinue }: ProfileAnalysisProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [bio, setBio] = useState(SUGGESTED_BIO);
   const [tags, setTags] = useState(VIBE_TAGS);
+  const [findings, setFindings] = useState(FINDINGS);
   const [newTag, setNewTag] = useState("");
 
   useEffect(() => {
@@ -72,33 +74,49 @@ export function ProfileAnalysis({ onContinue }: ProfileAnalysisProps) {
 
     const stepDuration = 2500 / ANALYSIS_STEPS.length;
     const stepInterval = setInterval(() => {
-      setStepIndex((prev) => {
-        if (prev >= ANALYSIS_STEPS.length - 1) {
-          clearInterval(stepInterval);
-          return prev;
-        }
-        return prev + 1;
-      });
+      setStepIndex((prev) => (prev >= ANALYSIS_STEPS.length - 1 ? prev : prev + 1));
     }, stepDuration);
 
     const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          return 100;
-        }
-        return prev + 2;
-      });
+      setProgress((prev) => (prev >= 100 ? 100 : prev + 2));
     }, 50);
 
-    const timeout = setTimeout(() => {
-      setAnalyzing(false);
-    }, 2800);
+    const fetchData = async () => {
+      try {
+        const result = await StarstruckAPI.getProfile({
+          letterboxd_username: "aditya",
+        });
+
+        if (result && result.dossier) {
+          const d = result.dossier;
+          if (d.public) {
+            setBio(d.public.vibe || SUGGESTED_BIO);
+            setTags(d.public.tags || VIBE_TAGS);
+          }
+          if (d.private) {
+            setFindings([
+              {
+                label: "Personality",
+                value: d.private.traits ? d.private.traits[0] : "Unique Vibe",
+                detail: d.private.summary,
+                color: COLORS.limeCreem,
+              },
+              ...FINDINGS.slice(1)
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error("Profile analysis error:", err);
+      } finally {
+        setTimeout(() => setAnalyzing(false), 3000);
+      }
+    };
+
+    fetchData();
 
     return () => {
       clearInterval(stepInterval);
       clearInterval(progressInterval);
-      clearTimeout(timeout);
     };
   }, [analyzing]);
 
@@ -260,7 +278,7 @@ export function ProfileAnalysis({ onContinue }: ProfileAnalysisProps) {
                 </span>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {FINDINGS.map((finding, i) => (
+                  {findings.map((finding, i) => (
                     <div
                       key={finding.label}
                       className="card-enter"

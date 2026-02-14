@@ -25,5 +25,12 @@ class CoachingCard(BaseModel):
 
 
 class CoachingResponse(BaseModel):
-    user_a_cards: list[CoachingCard]
-    user_b_cards: list[CoachingCard]
+    user_a_cards: list[CoachingCard] = []
+    user_b_cards: list[CoachingCard] = []
+    venues: list[dict] = []
+    coaching_a: dict = {}
+    coaching_b: dict = {}
+    cross_ref: dict = {}
+
+class ProfileResponse(BaseModel):
+    dossier: dict
