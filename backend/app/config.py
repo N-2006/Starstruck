@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     anthropic_api_key: str = ""
+    gemini_api_key: str = ""
     spotify_client_id: str = ""
     spotify_client_secret: str = ""
     google_places_api_key: str = ""
