@@ -16,6 +16,7 @@ class UserDataBundle(TypedDict, total=False):
 
 class UserProfile(TypedDict, total=False):
     username: str
+    identifiers: dict[str, str | None]
     raw_data: UserDataBundle
     dossier: dict[str, Any]
 
