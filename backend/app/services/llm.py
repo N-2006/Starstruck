@@ -9,25 +9,37 @@ from app.config import settings
 
 PROFILE_SYSTEM_PROMPT = """\
 You are a personality analyst. Given a user's digital footprint data from various platforms, \
-synthesize a structured personality dossier.
+synthesize a structured personality dossier split into two visibility tiers.
 
 Return ONLY valid JSON with these exact keys:
-- "summary": 2-3 sentence personality sketch
-- "traits": list of 3-6 personality trait phrases (e.g. "night owl", "deep-focus builder")
-- "interests": list of 3-8 specific interests extracted from the data
-- "vibe": one sentence capturing their overall energy/aesthetic
-- "schedule_pattern": one of "night_owl", "early_bird", or "mixed" (infer from activity timestamps if available)
+
+"public" — what EVERYONE can see on the profile (keep it intriguing but vague enough to spark curiosity):
+  - "vibe": one catchy sentence capturing their overall energy/aesthetic
+  - "tags": list of 5-8 short, broad interest tags (e.g. "web dev", "hip hop", "sci-fi films") — NO specific artist/repo/film names
+  - "schedule_pattern": one of "night_owl", "early_bird", or "mixed" (infer from activity timestamps if available)
+
+"private" — unlocked ONLY for matches (detailed, specific):
+  - "summary": 2-3 sentence detailed personality sketch
+  - "traits": list of 3-6 personality trait phrases (e.g. "night owl", "deep-focus builder")
+  - "interests": list of 5-10 SPECIFIC interests with names (e.g. "Drake", "Interstellar", "Python", "machine learning")
+  - "deep_cuts": list of 2-4 niche or surprising details that would make great conversation starters
 
 Do NOT wrap the JSON in markdown code fences. Return raw JSON only."""
 
 
 def _empty_dossier() -> dict:
     return {
-        "summary": "",
-        "traits": [],
-        "interests": [],
-        "vibe": "",
-        "schedule_pattern": "mixed",
+        "public": {
+            "vibe": "",
+            "tags": [],
+            "schedule_pattern": "mixed",
+        },
+        "private": {
+            "summary": "",
+            "traits": [],
+            "interests": [],
+            "deep_cuts": [],
+        },
         "data_sources": [],
     }
 
