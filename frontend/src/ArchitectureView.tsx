@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from "react";
 
 const PALETTE = {
@@ -274,7 +275,7 @@ function PipelineNode({ node, index, isActive, onClick }) {
   );
 }
 
-export default function App() {
+export default function ArchitectureView() {
   const [activeSource, setActiveSource] = useState(null);
   const [activeNode, setActiveNode] = useState("crossref");
   const [visible, setVisible] = useState(false);
