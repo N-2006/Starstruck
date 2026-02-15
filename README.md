@@ -1,5 +1,7 @@
 # Starstruck
 
+
+# Submission for Columbia University AI Hackathon. Valentines Day 2026 <3
 AI-powered dating app that builds personality profiles from your real online presence. Connect your accounts, and our pipeline scrapes, analyzes, and matches you based on who you actually are — not a curated bio.
 
 ## How It Works
